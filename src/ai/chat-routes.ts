@@ -352,6 +352,11 @@ export function registerAiChatRoutes(
       profile: 'application',
       modelId: usedModelId,
       authToken: jwt,
+      // Cap the output allowance: the SDK default reserves 64K output tokens
+      // up front, which alone exceeds a free plan's $5 credit balance and
+      // fails the turn with "Payment Required" before it runs. 4K tokens is
+      // plenty for a one-insight funnel answer.
+      maxOutputTokens: 4096,
       instructions: systemText,
       messages,
       tools,

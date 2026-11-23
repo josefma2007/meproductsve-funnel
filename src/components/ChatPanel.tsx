@@ -105,7 +105,7 @@ export function ChatPanel({
   // picker no longer offers (the worker correctly rejects unknown ids).
   useEffect(() => {
     if (modelId && models.some((model) => model.id === modelId)) return
-    setModelId(models[0]?.id)
+    setModelId(preferredModelId(models))
   }, [modelId, models])
 
   const groupedModels = useMemo(() => groupModelsByProvider(models), [models])
@@ -358,7 +358,20 @@ function initialModelId(models: ModelOption[]): string | undefined {
   }
   return saved && models.some((model) => model.id === saved)
     ? saved
-    : models[0]?.id
+    : preferredModelId(models)
+}
+
+// Cheapest-first default: the model list ships Opus 5.5 first, but a turn on
+// Opus reserves far more credits up front than the free plan's $5 balance,
+// so fresh visitors hit "Payment Required" before the assistant answers.
+// Prefer the balanced Sonnet model, then the fast Haiku model.
+const PREFERRED_MODEL_IDS = ['claude-sonnet-5-5', 'claude-haiku-5-5']
+
+function preferredModelId(models: ModelOption[]): string | undefined {
+  return (
+    PREFERRED_MODEL_IDS.map((id) => models.find((model) => model.id === id)).find(Boolean)
+      ?.id ?? models[0]?.id
+  )
 }
 
 function groupModelsByProvider(models: ModelOption[]): Array<[string, ModelOption[]]> {
